@@ -2,3 +2,4 @@ kfp==2.7.0
 google-cloud-storage
 google-cloud-aiplatform
 google-cloud-pipeline-components
+python-dotenv

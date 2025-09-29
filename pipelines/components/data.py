@@ -1,8 +1,12 @@
+import os
 from kfp.dsl import Dataset, Output, component
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
 @component(
-    base_image="gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest",
+    base_image=os.getenv("BASE_IMAGE", "gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest"),
     packages_to_install=[
         "pandas",
         "google-cloud-bigquery",

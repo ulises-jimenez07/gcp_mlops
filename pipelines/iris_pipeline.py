@@ -1,11 +1,16 @@
+import os
 import sys
 import google.cloud.aiplatform as aip
 import kfp
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 sys.path.append("src")
 
-PIPELIE_NAME = "The-Iris-Pipeline-v1"
-PIPELINE_ROOT = "gs://pipeline-demo-iris"
+PIPELIE_NAME = os.getenv("PIPELINE_NAME", "The-Iris-Pipeline-v1")
+PIPELINE_ROOT = os.getenv("PIPELINE_ROOT", "gs://your-bucket-name")
 
 
 @kfp.dsl.pipeline(name=PIPELIE_NAME, pipeline_root=PIPELINE_ROOT)
@@ -47,23 +52,22 @@ if __name__ == "__main__":
     
         # Initialize the AI Platform SDK
     aip.init(
-        project="project_id",
-        location="us-central1",
-        staging_bucket="gs://pipeline-demo-iris",
+        project=os.getenv("GCP_PROJECT_ID"),
+        location=os.getenv("GCP_LOCATION"),
+        staging_bucket=os.getenv("PIPELINE_ROOT"),
     )
     
 
     # Create an AI Platform PipelineJob
     job = aip.PipelineJob(
-        display_name="test iris pipeline",
+        display_name=os.getenv("PIPELINE_DISPLAY_NAME", "iris pipeline"),
         template_path=f"pipeline.yaml",
-        pipeline_root="gs://pipeline-demo-iris",
+        pipeline_root=os.getenv("PIPELINE_ROOT"),
         parameter_values={
-                "project_id": "project_id",
-                "location":  "us-central1",
-                "bq_dataset": "iris",
-                "bq_table": "iris"
-
+                "project_id": os.getenv("GCP_PROJECT_ID"),
+                "location": os.getenv("GCP_LOCATION"),
+                "bq_dataset": os.getenv("BQ_DATASET"),
+                "bq_table": os.getenv("BQ_TABLE")
             },
         enable_caching=False,
     )

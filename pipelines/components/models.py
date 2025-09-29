@@ -1,8 +1,13 @@
+import os
 from kfp.dsl import Dataset, Input, Metrics, Model, Output, component
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 @component(
-    base_image="gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest",
+    base_image=os.getenv("BASE_IMAGE", "gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest"),
     packages_to_install=[
         "pandas==1.3.5",
         "joblib==1.1.0",
@@ -39,7 +44,7 @@ def decision_tree(
 
 
 @component(
-    base_image="gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest",
+    base_image=os.getenv("BASE_IMAGE", "gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest"),
     packages_to_install=[
         "pandas==1.3.5",
         "joblib==1.1.0",
