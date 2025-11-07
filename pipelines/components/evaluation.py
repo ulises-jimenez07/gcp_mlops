@@ -7,10 +7,11 @@ load_dotenv()
 
 
 @component(
-    base_image=os.getenv("BASE_IMAGE", "gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest"),
+    base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
     packages_to_install=[
-        "pandas==1.3.5",
-        "joblib==1.1.0",
+        "pandas",
+        "joblib",
+        "scikit-learn",
     ],
 )
 def choose_best_model(

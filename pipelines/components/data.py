@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 @component(
-    base_image=os.getenv("BASE_IMAGE", "gcr.io/deeplearning-platform-release/tf2-cpu.2-6:latest"),
+    base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
     packages_to_install=[
         "pandas",
         "google-cloud-bigquery",
+        "scikit-learn",
     ],
 )
 def load_data(
