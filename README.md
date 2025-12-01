@@ -30,6 +30,12 @@ pip install -r requirements.txt
 
 ### 2. Configure Environment
 
+First, get your GCP project ID from your current gcloud configuration:
+
+```bash
+gcloud config get-value project
+```
+
 Copy the example environment file and update with your GCP project details:
 
 ```bash
@@ -37,21 +43,31 @@ cp .env.example .env
 ```
 
 Edit `.env` and set:
-- `GCP_PROJECT_ID`: Your GCP project ID
+- `GCP_PROJECT_ID`: Your GCP project ID (use the output from the command above)
 - `GCP_LOCATION`: Your preferred region (e.g., `us-central1`)
-- `GCP_BUCKET_NAME`: Unique name for your GCS bucket
+- `GCP_BUCKET_NAME`: Unique name for your GCS bucket (e.g., `mlops-bucket-<your-project-id>`)
 - `PIPELINE_ROOT`: GCS path (e.g., `gs://your-bucket-name`)
+- `BQ_DATASET`: BigQuery dataset name (e.g., `iris_dataset`)
+- `BQ_TABLE`: BigQuery table name (e.g., `iris_data`)
 
 ### 3. Set Up GCP Resources
 
-Run the setup commands to create required GCP resources:
+After configuring your `.env` file, run the following commands to create required GCP resources:
 
 ```bash
-# Follow the instructions in SETUP.md
-bash -c "$(cat SETUP.md | grep -A 100 '```bash' | tail -n +2 | head -n -1)"
-```
+# Load environment variables first
+source .env
 
-Or manually run the commands in [SETUP.md](SETUP.md).
+# Create GCS bucket (update .env with the bucket name before running)
+gsutil mb -p ${GCP_PROJECT_ID} -l ${GCP_LOCATION} gs://${GCP_BUCKET_NAME}
+
+# Download sample data
+curl https://huggingface.co/datasets/scikit-learn/iris/raw/main/Iris.csv -o iris-setosa.csv
+
+# Create BigQuery dataset and table
+bq mk --dataset --location=${GCP_LOCATION} ${GCP_PROJECT_ID}:${BQ_DATASET}
+bq load --source_format=CSV --autodetect ${GCP_PROJECT_ID}:${BQ_DATASET}.${BQ_TABLE} ./iris-setosa.csv
+```
 
 ### 4. Run the Pipeline
 
@@ -79,7 +95,6 @@ gcp_mlops/
 │   │   └── deploy.py      # Model registration and deployment
 │   └── pipeline.py        # Main pipeline definition
 ├── requirements.txt       # Python dependencies
-├── SETUP.md              # GCP resource setup instructions
 ├── .env.example          # Environment variables template
 └── README.md            # This file
 ```
@@ -154,12 +169,50 @@ print(predictions)
 - Check that environment variables are properly set in `.env`
 
 ### BigQuery Table Not Found
-- Run the setup commands in [SETUP.md](SETUP.md) to create the BigQuery table
+- Run the setup commands in step 3 to create the BigQuery table
 
 ### Model Deployment Fails
 - Verify Vertex AI API is enabled
 - Check that your service account has necessary permissions
 - Ensure the model was successfully registered
+
+## Clean Up
+
+To avoid incurring charges, delete the GCP resources when you're done:
+
+```bash
+# Load environment variables
+source .env
+
+# Delete the Vertex AI endpoint (if deployed)
+ENDPOINT_ID=$(gcloud ai endpoints list --region=${GCP_LOCATION} \
+  --filter="displayName:${ENDPOINT_DISPLAY_NAME}" \
+  --format="value(name)")
+if [ ! -z "$ENDPOINT_ID" ]; then
+  gcloud ai endpoints delete $ENDPOINT_ID --region=${GCP_LOCATION} --quiet
+fi
+
+# Undeploy and delete models from Vertex AI
+MODEL_ID=$(gcloud ai models list --region=${GCP_LOCATION} \
+  --filter="displayName:${MODEL_DISPLAY_NAME}" \
+  --format="value(name)")
+if [ ! -z "$MODEL_ID" ]; then
+  gcloud ai models delete $MODEL_ID --region=${GCP_LOCATION} --quiet
+fi
+
+# Delete BigQuery dataset and all tables
+bq rm -r -f -d ${GCP_PROJECT_ID}:${BQ_DATASET}
+
+# Delete GCS bucket and all contents
+gsutil rm -r gs://${GCP_BUCKET_NAME}
+
+# Delete downloaded sample data
+rm -f iris-setosa.csv
+
+echo "Clean up completed!"
+```
+
+**Note**: These commands will permanently delete all resources and data. Make sure you have backed up anything you need before running them.
 
 ## Contributing
 
