@@ -11,6 +11,7 @@ load_dotenv()
         "pandas",
         "google-cloud-bigquery",
         "scikit-learn",
+        "db-dtypes"
     ],
 )
 def load_data(
