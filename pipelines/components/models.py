@@ -11,7 +11,7 @@ load_dotenv()
     packages_to_install=[
         "pandas",
         "joblib",
-        "scikit-learn",
+        "scikit-learn==1.3.2",
     ],
 )
 def decision_tree(
@@ -49,7 +49,7 @@ def decision_tree(
     packages_to_install=[
         "pandas",
         "joblib",
-        "scikit-learn",
+        "scikit-learn==1.3.2",
     ],
 )
 def random_forest(

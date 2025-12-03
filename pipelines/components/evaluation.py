@@ -11,7 +11,7 @@ load_dotenv()
     packages_to_install=[
         "pandas",
         "joblib",
-        "scikit-learn",
+        "scikit-learn==1.3.2",
     ],
 )
 def choose_best_model(

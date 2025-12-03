@@ -8,7 +8,7 @@ load_dotenv()
 
 @component(
     base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
-    packages_to_install=["google-cloud-aiplatform", "scikit-learn", "joblib"],
+    packages_to_install=["google-cloud-aiplatform", "google-cloud-storage", "scikit-learn==1.3.2", "joblib"],
 )
 def upload_model(
     project_id: str,
@@ -17,15 +17,58 @@ def upload_model(
     model: Input[Model],
     vertex_model: Output[Artifact],
 ):
-    """Upload trained model to Vertex AI Model Registry."""
-    from google.cloud import aiplatform
+    """Upload trained model to Vertex AI Model Registry with custom serving container."""
+    from google.cloud import aiplatform, storage
+    import os
+    import shutil
+    import time
+    import re
 
     aiplatform.init(project=project_id, location=location)
 
-    # Upload the scikit-learn model to Vertex AI
-    uploaded_model = aiplatform.Model.upload_scikit_learn_model_file(
-        model_file_path=model.path,
+    # Create proper model artifact structure for sklearn serving
+    model_dir = "/tmp/model_artifacts"
+    os.makedirs(model_dir, exist_ok=True)
+    model_artifact_path = os.path.join(model_dir, "model.joblib")
+
+    # Copy the model to the expected location
+    shutil.copy(model.path, model_artifact_path)
+
+    # Upload model artifacts to GCS
+    # Get bucket from the model's existing URI (which is already in GCS from KFP)
+    storage_client = storage.Client(project=project_id)
+
+    # Extract bucket name from model.uri
+    # Model.uri looks like: gs://bucket-name/path/to/model
+    model_uri = model.uri if hasattr(model, 'uri') and model.uri else model.path
+    if model_uri.startswith('gs://'):
+        match = re.match(r'gs://([^/]+)', model_uri)
+        bucket_name = match.group(1) if match else f"{project_id}-mlops"
+    else:
+        bucket_name = f"{project_id}-mlops"
+
+    # Create a unique GCS path for the model artifacts
+    timestamp = int(time.time())
+    gcs_blob_path = f"models/{model_display_name}/{timestamp}"
+    gcs_model_path = f"gs://{bucket_name}/{gcs_blob_path}"
+
+    # Get bucket (should already exist from pipeline setup)
+    bucket = storage_client.bucket(bucket_name)
+
+    # Upload model.joblib to GCS
+    blob = bucket.blob(f"{gcs_blob_path}/model.joblib")
+    blob.upload_from_filename(model_artifact_path)
+
+    print(f"Model uploaded to: {gcs_model_path}")
+
+    # Upload using Vertex AI with custom serving container
+    # Using sklearn 1.3 pre-built container for better compatibility
+    uploaded_model = aiplatform.Model.upload(
         display_name=model_display_name,
+        artifact_uri=gcs_model_path,
+        serving_container_image_uri="us-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-3:latest",
+        serving_container_predict_route="/predict",
+        serving_container_health_route="/health",
         project=project_id,
         location=location,
     )

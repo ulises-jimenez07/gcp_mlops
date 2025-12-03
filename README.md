@@ -61,6 +61,13 @@ source .env
 # Create GCS bucket (update .env with the bucket name before running)
 gsutil mb -p ${GCP_PROJECT_ID} -l ${GCP_LOCATION} gs://${GCP_BUCKET_NAME}
 
+# Grant Cloud Storage Admin role to Compute Engine default service account
+# This is required for the pipeline to read/write artifacts to GCS
+PROJECT_NUMBER=$(gcloud projects describe ${GCP_PROJECT_ID} --format="value(projectNumber)")
+gcloud projects add-iam-policy-binding ${GCP_PROJECT_ID} \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.admin"
+
 # Download sample data
 curl https://huggingface.co/datasets/scikit-learn/iris/raw/main/Iris.csv -o iris-setosa.csv
 
@@ -172,6 +179,17 @@ print(predictions)
 - Run the setup commands in step 3 to create the BigQuery table
 
 ### Model Deployment Fails
+
+**"Model server never became ready" Error:**
+- This occurs when there's a version mismatch between training and serving containers
+- **Critical:** All components must use the same scikit-learn version (1.3.2) to match the serving container
+- The fix includes:
+  1. Pinning `scikit-learn==1.3.2` in all training/evaluation components
+  2. Using the matching Vertex AI pre-built container `sklearn-cpu.1-3:latest`
+  3. Properly structuring model artifacts with `model.joblib` in GCS
+  4. Using `Model.upload()` instead of `upload_scikit_learn_model_file()`
+
+**Other deployment issues:**
 - Verify Vertex AI API is enabled
 - Check that your service account has necessary permissions
 - Ensure the model was successfully registered
