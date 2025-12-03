@@ -7,7 +7,7 @@ load_dotenv()
 
 
 @component(
-    base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
+    base_image=os.getenv("BASE_IMAGE", "python:3.11-slim"),
     packages_to_install=[
         "pandas",
         "joblib",
@@ -45,7 +45,7 @@ def decision_tree(
 
 
 @component(
-    base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
+    base_image=os.getenv("BASE_IMAGE", "python:3.11-slim"),
     packages_to_install=[
         "pandas",
         "joblib",

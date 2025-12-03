@@ -7,7 +7,7 @@ load_dotenv()
 
 
 @component(
-    base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
+    base_image=os.getenv("BASE_IMAGE", "python:3.11-slim"),
     packages_to_install=["google-cloud-aiplatform", "google-cloud-storage", "scikit-learn==1.3.2", "joblib"],
 )
 def upload_model(
@@ -80,7 +80,7 @@ def upload_model(
 
 
 @component(
-    base_image=os.getenv("BASE_IMAGE", "python:3.10-slim"),
+    base_image=os.getenv("BASE_IMAGE", "python:3.11-slim"),
     packages_to_install=["google-cloud-aiplatform"],
 )
 def deploy_model(

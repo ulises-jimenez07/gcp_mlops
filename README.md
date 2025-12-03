@@ -13,7 +13,7 @@ A production-ready Kubeflow pipeline for Iris classification on Google Cloud Pla
 ## Prerequisites
 
 - Google Cloud Platform account with billing enabled
-- Python 3.10 or higher
+- Python 3.11 or higher
 - GCP CLI (`gcloud`) installed and authenticated
 - Required GCP APIs enabled:
   - Vertex AI API
@@ -137,7 +137,7 @@ Key environment variables in `.env`:
 | `MODEL_DISPLAY_NAME` | Model name in registry | `iris-classifier` |
 | `ENDPOINT_DISPLAY_NAME` | Endpoint name | `iris-endpoint` |
 | `DEPLOY_MODEL` | Enable deployment | `true` or `false` |
-| `BASE_IMAGE` | Container base image | `python:3.10-slim` |
+| `BASE_IMAGE` | Container base image | `python:3.11-slim` |
 
 ## Usage
 
